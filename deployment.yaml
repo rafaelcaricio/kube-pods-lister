@@ -40,7 +40,7 @@ data:
         apiVersion: v1
         clusters:
         - cluster:
-            certificate-authority: /etc/ssl/certs/ca-certificates.crt
+            certificate-authority: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
             server: https://192.168.99.100:8443
           name: mycluster
         contexts:
