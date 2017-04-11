@@ -1,0 +1,84 @@
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: pods-viewer
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs:
+    - get
+    - list
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pods-lister-account
+  namespace: default
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: pods-lister-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pods-viewer
+subjects:
+- kind: ServiceAccount
+  name: pods-lister-account
+  namespace: default
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: myapp-kubernetes-cfg
+  namespace: default
+data:
+  config: |
+        # ~/.kube/config
+        apiVersion: v1
+        clusters:
+        - cluster:
+            certificate-authority: /etc/ssl/certs/ca-certificates.crt
+            server: https://192.168.99.100:8443
+          name: mycluster
+        contexts:
+        - context:
+            cluster: mycluster
+            user: myapp
+          name: mycluster
+        current-context: mycluster
+        kind: Config
+        preferences: {}
+        users:
+        - name: myapp
+          user:
+            tokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: "pods-lister"
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: pods-lister
+    spec:
+      serviceAccount: pods-lister-account
+      containers:
+      - name: app
+        image: "rafaelcaricio/pods-lister:0.1.0"
+        args:
+        - --config
+        - /kube/config
+        volumeMounts:
+        - name: kube-config
+          mountPath: /kube
+          readOnly: true
+      volumes:
+      - name: kube-config
+        configMap:
+          name: myapp-kubernetes-cfg
