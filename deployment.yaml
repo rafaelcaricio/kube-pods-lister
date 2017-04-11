@@ -29,33 +29,6 @@ subjects:
   name: pods-lister-account
   namespace: default
 ---
-kind: ConfigMap
-apiVersion: v1
-metadata:
-  name: myapp-kubernetes-cfg
-  namespace: default
-data:
-  config: |
-        # ~/.kube/config
-        apiVersion: v1
-        clusters:
-        - cluster:
-            certificate-authority: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-            server: https://192.168.99.100:8443
-          name: mycluster
-        contexts:
-        - context:
-            cluster: mycluster
-            user: myapp
-          name: mycluster
-        current-context: mycluster
-        kind: Config
-        preferences: {}
-        users:
-        - name: myapp
-          user:
-            tokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
----
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -70,15 +43,4 @@ spec:
       serviceAccount: pods-lister-account
       containers:
       - name: app
-        image: "rafaelcaricio/pods-lister:0.1.0"
-        args:
-        - --config
-        - /kube/config
-        volumeMounts:
-        - name: kube-config
-          mountPath: /kube
-          readOnly: true
-      volumes:
-      - name: kube-config
-        configMap:
-          name: myapp-kubernetes-cfg
+        image: "rafaelcaricio/pods-lister:0.2.0"
